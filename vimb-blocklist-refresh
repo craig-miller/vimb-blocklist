@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# vimb-blocklist-refresh — fetch the three EasyList sources, convert to
+# WKContentRuleList JSON via adblock-rust-cli, compile into a fresh
+# WebKitUserContentFilterStore, atomically swap it into place.
+#
+# Runs weekly under /etc/cron.weekly. Safe to run manually.
+
+set -eu
+
+LIB=/var/lib/vimb-blocklist
+CACHE=/var/cache/vimb-blocklist
+
+fetch_convert() {
+	local name=$1 url=$2
+	curl -sSfL --retry 3 -o "${LIB}/${name}.txt.tmp" "${url}"
+	mv -f "${LIB}/${name}.txt.tmp" "${LIB}/${name}.txt"
+	adblock-rust-cli "${LIB}/${name}.txt" > "${LIB}/${name}.json.tmp"
+	mv -f "${LIB}/${name}.json.tmp" "${LIB}/${name}.json"
+}
+
+mkdir -p "${LIB}" "${CACHE}"
+
+fetch_convert easylist    https://easylist.to/easylist/easylist.txt
+fetch_convert easyprivacy https://easylist.to/easylist/easyprivacy.txt
+fetch_convert cookies     https://easylist.to/easylist/easylist-cookie.txt
+
+rm -rf "${CACHE}/store.new"
+mkdir -p "${CACHE}/store.new"
+for name in easylist easyprivacy cookies; do
+	vimb-blocklist-compile "${CACHE}/store.new" "${name}" "${LIB}/${name}.json"
+done
+
+rm -rf "${CACHE}/store.old"
+if [ -d "${CACHE}/store" ]; then
+	mv "${CACHE}/store" "${CACHE}/store.old"
+fi
+mv "${CACHE}/store.new" "${CACHE}/store"
+rm -rf "${CACHE}/store.old"
