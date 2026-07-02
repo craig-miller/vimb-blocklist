@@ -27,7 +27,7 @@ mkdir -p "${LIB}" "${CACHE}"
 
 fetch_convert easylist    https://easylist.to/easylist/easylist.txt
 fetch_convert easyprivacy https://easylist.to/easylist/easyprivacy.txt
-fetch_convert cookies     https://easylist.to/easylist/easylist-cookie.txt
+fetch_convert cookies     https://secure.fanboy.co.nz/fanboy-cookiemonster.txt
 
 rm -rf "${CACHE}/store.new"
 mkdir -p "${CACHE}/store.new"
