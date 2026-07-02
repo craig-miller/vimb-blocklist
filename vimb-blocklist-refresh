@@ -8,6 +8,10 @@
 
 set -eu
 
+# WebKit creates the ContentRuleList files with 0600 by default. Force 0644
+# so unprivileged vimb sessions can read the shared cache.
+umask 022
+
 LIB=/var/lib/vimb-blocklist
 CACHE=/var/cache/vimb-blocklist
 
@@ -37,3 +41,6 @@ if [ -d "${CACHE}/store" ]; then
 fi
 mv "${CACHE}/store.new" "${CACHE}/store"
 rm -rf "${CACHE}/store.old"
+
+# Belt-and-suspenders: guarantee world-readable even if a stale umask leaks in.
+chmod -R a+rX "${CACHE}/store"
